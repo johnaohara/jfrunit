@@ -36,6 +36,7 @@
     <maven.compiler.source>14</maven.compiler.source>
     <maven.compiler.target>14</maven.compiler.target>
     <quarkus.platform.version>1.9.2.Final</quarkus.platform.version>
+    <jmc.version>8.0.0-SNAPSHOT</jmc.version>
   </properties>
 
   <licenses>
@@ -72,6 +73,13 @@
       <artifactId>quarkus-junit5</artifactId>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.openjdk.jmc</groupId>
+      <artifactId>flightrecorder.rules.jdk</artifactId>
+      <version>${jmc.version}</version>
+    </dependency>
+
   </dependencies>
 
   <build>

@@ -42,6 +42,8 @@ import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
+import org.openjdk.jmc.flightrecorder.rules.IResult;
+import org.openjdk.jmc.flightrecorder.rules.Severity;
 
 public class JfrEvents {
 
@@ -53,6 +55,8 @@ public class JfrEvents {
     private AtomicLong watermark = new AtomicLong();
     private RecordingStream stream;
     private Recording recording;
+
+    private JfrAnalysisResults analysis = null;
 
     public JfrEvents() {
     }
@@ -81,19 +85,29 @@ public class JfrEvents {
         }
     }
 
-    void stopRecordingEvents() {
+    Path stopRecordingEvents() {
         try {
-            Path dumpDir = Files.createDirectories(Path.of(testMethod.getDeclaringClass().getProtectionDomain().getCodeSource().getLocation().toURI()).getParent().resolve("jfrunit"));
-            System.out.println("Stop recording: " + dumpDir.resolve(testMethod.getDeclaringClass().getName() + "-" + testMethod.getName() + ".jfr"));
+            Path jfrPath = getJfrPath();
+            System.out.println("Stop recording: " + jfrPath.toAbsolutePath().toString());
             recording.stop();
-            recording.dump(dumpDir.resolve(testMethod.getDeclaringClass().getName() + "-" + testMethod.getName() + ".jfr"));
+            dumpRecording(jfrPath);
             recording.close();
 
             stream.close();
+            return jfrPath;
         }
         catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Path getJfrPath() throws URISyntaxException, IOException {
+        Path dumpDir = Files.createDirectories(Path.of(testMethod.getDeclaringClass().getProtectionDomain().getCodeSource().getLocation().toURI()).getParent().resolve("jfrunit"));
+        return dumpDir.resolve(testMethod.getDeclaringClass().getName() + "-" + testMethod.getName() + ".jfr");
+    }
+
+    void dumpRecording(Path jfrPath) throws IOException {
+        recording.dump(jfrPath);
     }
 
     /**
@@ -241,5 +255,21 @@ public class JfrEvents {
         }
 
         return allEvents;
+    }
+
+    public JfrAnalysisResults automaticAnalysis(){
+        if(analysis == null){
+            Path jfrPath = null;
+            try {
+                jfrPath = getJfrPath();
+                dumpRecording(jfrPath);
+
+                analysis = new JfrAnalysisResults(JfrAnalysis.analysisRecording(jfrPath.toAbsolutePath().toString(), Severity.INFO));
+            } catch (IOException | URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+
+        }
+        return analysis;
     }
 }

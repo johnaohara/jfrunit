@@ -99,6 +99,18 @@ JFR configuration files are located in the _$JAVA_HOME/bin/jfr_ directory.
 
 This project requires OpenJDK 14 or later for its build.
 Apache Maven is used for the build.
+
+This branch relies on JMC automatic analysis rules for JFR. Unfortunately these artifacts are not currently published to maven central (https://bugs.openjdk.java.net/browse/JMC-6813).
+
+To build the automatic analysis rules:
+
+```shell script
+git clone git@github.com:openjdk/jmc.git
+cd jmc/core
+mvn clean install -DskipTests
+```
+   
+
 Run the following to build the project:
 
 ```shell

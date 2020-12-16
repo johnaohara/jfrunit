@@ -15,8 +15,13 @@
  */
 package dev.morling.jfrunit;
 
+import org.openjdk.jmc.flightrecorder.rules.Severity;
+import org.openjdk.jmc.flightrecorder.rules.jdk.memory.FullGcRule;
+import org.openjdk.jmc.flightrecorder.rules.jdk.memory.HeapDumpRule;
+
 import static dev.morling.jfrunit.ExpectedEvent.event;
 import static dev.morling.jfrunit.JfrEventsAssert.assertThat;
+import static dev.morling.jfrunit.JfrAnalysisAssert.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
@@ -69,5 +74,32 @@ public class JfrUnitTest {
                 .sum();
 
         assertThat(allocated).isGreaterThan(0);
+    }
+
+    @Test
+    @EnableConfiguration("profile")
+    public void automatedAnalysis() throws Exception {
+
+        System.gc();
+        Thread.sleep(1000);
+
+        jfrEvents.awaitEvents();
+
+        JfrAnalysisResults analysisResults = jfrEvents.automaticAnalysis();
+
+        assertThat(analysisResults.size()).isEqualTo(2);
+
+        //Inspect rules that fired
+        assertThat(analysisResults).contains(FullGcRule.class);
+        assertThat(analysisResults).doesNotContain(HeapDumpRule.class);
+
+        //Inspect severity of rule
+        assertThat(analysisResults).hasSeverity(FullGcRule.class, Severity.WARNING);
+
+        //Inspect score of rule
+        assertThat(analysisResults)
+                .contains(FullGcRule.class)
+                .scoresLessThan(80);
+
     }
 }
